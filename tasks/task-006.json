@@ -1,24 +1,29 @@
 {
   "id": "task-006",
-  "title": "New Task",
-  "description": "Test description",
+  "title": "Setup GitHub Actions CI/CD pipeline",
+  "description": "Create automated testing and deployment workflow for the project management dashboard. Scope:\n1. Create .github/workflows/test.yml with: - Python testing on push and PR - Coverage reporting - Linting checks\n2. Add pytest-cov and flake8 to requirements.txt\n3. Add .flake8 config file\n4. Configure codecov.io integration Goal: Ensure code quality and prevent regressions with automated CI.",
   "priority": "high",
   "stage": "planning",
-  "workMode": "iterative",
+  "workMode": "immediate",
   "workflowStage": "initial",
-  "createdAt": "2026-03-12T21:30:58.513173",
-  "updatedAt": "2026-03-12T21:30:58.513232",
+  "createdAt": "2026-03-13T05:30:00.000000",
+  "updatedAt": "2026-03-13T05:30:00.000000",
   "assignee": "Jennie",
   "completion_summary": "",
   "notes": {
-    "goal": "",
-    "requirements": [],
+    "goal": "Implement CI/CD automation",
+    "requirements": [
+      "Create GitHub Actions workflow",
+      "Add flake8 linting",
+      "Add coverage reporting",
+      "Update requirements.txt"
+    ],
     "feedback": "",
     "blocked": false,
     "blockReason": null,
     "unblockNeeded": null,
     "timeEstimate": {
-      "planned": null,
+      "planned": "20",
       "actual": null
     }
   }

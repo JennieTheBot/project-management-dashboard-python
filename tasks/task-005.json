@@ -1,7 +1,7 @@
 {
   "id": "task-005",
   "title": "Fix failing unit tests",
-  "description": "Fix 5 failing unit tests to achieve 100% test pass rate.\n\n## Failing Tests\n\n1. **test_strip_html_unicode** (2 tests) - strip_html should preserve HTML tags when input is already HTML\n2. **test_load_task_exists** - load_task returns None when it should return the task\n3. **test_create_task** - create_task() doesn't accept 'workMode' parameter (should be 'work_mode')\n4. **test_sanitize_task_with_html** - strip_html incorrectly handles HTML with newlines\n\n## Root Causes\n\n1. strip_html() always strips HTML - needs to detect if already clean\n2. load_task() path resolution issue or file read error\n3. create_task() signature uses 'work_mode' but tests use 'workMode'\n4. strip_html() regex strips newlines in HTML content\n\n## Expected Fixes\n\n1. Add flag to strip_html() to preserve clean HTML\n2. Fix load_task() error handling or file path\n3. Update create_task() to accept both 'workMode' and 'work_mode' (for backward compat)\n4. Fix strip_html() to preserve inner text formatting\n\n## Goal\n\nAchieve 100% test pass rate (55/55) with comprehensive test coverage.",
+  "description": "Fix 5 failing unit tests to achieve 100% test pass rate. ## Failing Tests 1. **test_strip_html_unicode** (2 tests) - strip_html should preserve HTML tags when input is already HTML\n2. **test_load_task_exists** - load_task returns None when it should return the task\n3. **test_create_task** - create_task() doesn't accept 'workMode' parameter (should be 'work_mode')\n4. **test_sanitize_task_with_html** - strip_html incorrectly handles HTML with newlines ## Root Causes 1. strip_html() always strips HTML - needs to detect if already clean\n2. load_task() path resolution issue or file read error\n3. create_task() signature uses 'work_mode' but tests use 'workMode'\n4. strip_html() regex strips newlines in HTML content ## Expected Fixes 1. Add flag to strip_html() to preserve clean HTML\n2. Fix load_task() error handling or file path\n3. Update create_task() to accept both 'workMode' and 'work_mode' (for backward compat)\n4. Fix strip_html() to preserve inner text formatting ## Goal Achieve 100% test pass rate (55/55) with comprehensive test coverage.",
   "priority": "high",
   "stage": "completion",
   "workMode": "immediate",
@@ -9,7 +9,7 @@
   "createdAt": "2026-03-13T02:30:00.000000",
   "updatedAt": "2026-03-13T04:30:00.000000",
   "assignee": "Jennie",
-  "completion_summary": "Successfully fixed all 5 failing tests:\n\n1. **test_strip_html_unicode**: Added HTML entity detection - inputs like '&lt;div&gt;' are unescaped to '<div>' and preserved, while actual HTML tags are stripped\n2. **test_load_task_exists**: Tests now use @patch('app.TASKS_FOLDER', ...) to isolate test directories\n3. **test_create_task**: Added backward compatibility - create_task() accepts both 'workMode' (old) and 'work_mode' (new) parameters\n4. **test_sanitize_task_with_html**: Fixed strip_html to use spaces instead of newlines when replacing HTML tags, preventing 'Paragraph\n\n text' -> 'Paragraph text'\n5. Fixed syntax error in return statement\n\nResult: 55/55 tests passing (100% pass rate)\n\nFiles modified:\n- app.py: strip_html(), load_task(), create_task()\n- convert_tasks.py: strip_html()\n- tests/test_app.py: test_load_task_exists fixture\n\nCommit: 75b717b - ready to push to GitHub.",
+  "completion_summary": "Successfully fixed all 5 failing tests: 1. **test_strip_html_unicode**: Added HTML entity detection - inputs like '' are unescaped to '' and preserved, while actual HTML tags are stripped\n2. **test_load_task_exists**: Tests now use @patch('app.TASKS_FOLDER', ...) to isolate test directories\n3. **test_create_task**: Added backward compatibility - create_task() accepts both 'workMode' (old) and 'work_mode' (new) parameters\n4. **test_sanitize_task_with_html**: Fixed strip_html to use spaces instead of newlines when replacing HTML tags, preventing 'Paragraph text' -> 'Paragraph text'\n5. Fixed syntax error in return statement Result: 55/55 tests passing (100% pass rate) Files modified:\n- app.py: strip_html(), load_task(), create_task()\n- convert_tasks.py: strip_html()\n- tests/test_app.py: test_load_task_exists fixture Commit: 75b717b - ready to push to GitHub.",
   "notes": {
     "goal": "Fix 5 failing unit tests",
     "requirements": [
@@ -23,8 +23,8 @@
     "blockReason": null,
     "unblockNeeded": null,
     "timeEstimate": {
-      "planned": 30,
-      "actual": 25
+      "planned": "30",
+      "actual": "25"
     }
   }
 }
