@@ -1,7 +1,7 @@
 {
   "id": "task-004",
   "title": "Install git and GitHub CLI (gh)",
-  "description": "Set up version control tools for GitHub integration.\n\nScope:\n1. Install git command line tool\n2. Install GitHub CLI (gh)\n3. Verify installations\n4. Configure GitHub authentication with provided credentials\n\nGoal: Enable GitHub integration for Jennie's autonomous agent account.",
+  "description": "Set up version control tools for GitHub integration. Scope:\n1. Install git command line tool\n2. Install GitHub CLI (gh)\n3. Verify installations\n4. Configure GitHub authentication with provided credentials Goal: Enable GitHub integration for Jennie's autonomous agent account.",
   "priority": "urgent",
   "stage": "completion",
   "workMode": "immediate",
@@ -20,13 +20,11 @@
     ],
     "feedback": "",
     "blocked": false,
-    "blockReason": "",
-    "unblockNeeded": "",
+    "blockReason": null,
+    "unblockNeeded": null,
     "timeEstimate": {
       "planned": null,
       "actual": null
-    },
-    "completedVia": "Python requests API authentication (gh CLI needs exec approval)",
-    "credentials_note": "GITHUB_TOKEN stored securely, not in repo"
+    }
   }
 }

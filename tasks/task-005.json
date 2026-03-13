@@ -1,0 +1,30 @@
+{
+  "id": "task-005",
+  "title": "Fix failing unit tests",
+  "description": "Fix 5 failing unit tests to achieve 100% test pass rate. ## Failing Tests 1. **test_strip_html_unicode** (2 tests) - strip_html should preserve HTML tags when input is already HTML\n2. **test_load_task_exists** - load_task returns None when it should return the task\n3. **test_create_task** - create_task() doesn't accept 'workMode' parameter (should be 'work_mode')\n4. **test_sanitize_task_with_html** - strip_html incorrectly handles HTML with newlines ## Root Causes 1. strip_html() always strips HTML - needs to detect if already clean\n2. load_task() path resolution issue or file read error\n3. create_task() signature uses 'work_mode' but tests use 'workMode'\n4. strip_html() regex strips newlines in HTML content ## Expected Fixes 1. Add flag to strip_html() to preserve clean HTML\n2. Fix load_task() error handling or file path\n3. Update create_task() to accept both 'workMode' and 'work_mode' (for backward compat)\n4. Fix strip_html() to preserve inner text formatting ## Goal Achieve 100% test pass rate (55/55) with comprehensive test coverage.",
+  "priority": "high",
+  "stage": "planning",
+  "workMode": "immediate",
+  "workflowStage": "initial",
+  "createdAt": "2026-03-13T02:30:00.000000",
+  "updatedAt": "2026-03-13T02:30:00.000000",
+  "assignee": "Jennie",
+  "completion_summary": "",
+  "notes": {
+    "goal": "Fix 5 failing unit tests",
+    "requirements": [
+      "Fix strip_html() unicode/HTML handling",
+      "Fix load_task() file reading",
+      "Fix create_task() parameter naming",
+      "Verify all tests pass"
+    ],
+    "feedback": "",
+    "blocked": false,
+    "blockReason": null,
+    "unblockNeeded": null,
+    "timeEstimate": {
+      "planned": "30",
+      "actual": null
+    }
+  }
+}

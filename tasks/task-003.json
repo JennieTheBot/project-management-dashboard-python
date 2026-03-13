@@ -1,7 +1,7 @@
 {
   "id": "task-003",
   "title": "Add documentation (docstrings, CHANGELOG, type hints)",
-  "description": "Improve code quality with proper documentation and type hints.\n\nScope:\n1. Add module-level and function-level docstrings to app.py\n2. Add docstrings to convert_tasks.py\n3. Add type hints to both files where missing\n4. Create CHANGELOG.md for version history\n5. Add proper logging instead of print/st calls where appropriate\n\nGoal: Make code self-documenting and maintainable.",
+  "description": "Improve code quality with proper documentation and type hints. Scope:\n1. Add module-level and function-level docstrings to app.py\n2. Add docstrings to convert_tasks.py\n3. Add type hints to both files where missing\n4. Create CHANGELOG.md for version history\n5. Add proper logging instead of print/st calls where appropriate Goal: Make code self-documenting and maintainable.",
   "priority": "high",
   "stage": "completion",
   "workMode": "immediate",
@@ -9,7 +9,7 @@
   "createdAt": "2026-03-12T11:28:00.000000",
   "updatedAt": "2026-03-12T12:21:00.000000",
   "assignee": "Jennie",
-  "completion_summary": "Completed documentation improvements:\n\n1. Added module-level docstring to app.py\n2. Added logging configuration (logging.getLogger) to app.py\n3. Added docstrings to all core functions in app.py:\n   - strip_html, safe_text, esc\n   - read_json, write_json\n   - task_file, get_next_task_id\n   - normalize_notes, normalize_task\n   - load_task, save_task, delete_task, create_task\n   - get_all_tasks, fmt_date\n   - apply_iterative_action, apply_immediate_action\n   - render_kpi, render_task_card\n4. Added docstrings to convert_tasks.py:\n   - strip_html, load_json, save_json\n   - sanitize_task, process_file, main\n5. Created CHANGELOG.md with version history (v1.0.0 and v1.1.0)\n\nAll functions now have clear docstrings explaining purpose, parameters, and return values.\n\nTo run tests:\n  pytest tests/\n\nThe codebase is now well-documented and maintainable.",
+  "completion_summary": "Completed documentation improvements: 1. Added module-level docstring to app.py\n2. Added logging configuration (logging.getLogger) to app.py\n3. Added docstrings to all core functions in app.py: - strip_html, safe_text, esc - read_json, write_json - task_file, get_next_task_id - normalize_notes, normalize_task - load_task, save_task, delete_task, create_task - get_all_tasks, fmt_date - apply_iterative_action, apply_immediate_action - render_kpi, render_task_card\n4. Added docstrings to convert_tasks.py: - strip_html, load_json, save_json - sanitize_task, process_file, main\n5. Created CHANGELOG.md with version history (v1.0.0 and v1.1.0) All functions now have clear docstrings explaining purpose, parameters, and return values. To run tests: pytest tests/ The codebase is now well-documented and maintainable.",
   "notes": {
     "goal": "Improve code documentation and type hints",
     "requirements": [],

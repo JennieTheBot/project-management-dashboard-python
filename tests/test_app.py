@@ -208,7 +208,8 @@ class TestLoadTask:
 
     def test_load_task_exists(self, sample_task_file):
         """Test loading existing task."""
-        result = load_task("task-001")
+        with patch('app.TASKS_FOLDER', sample_task_file.parent):
+            result = load_task("task-001")
         assert result is not None
         assert result["id"] == "task-001"
 

@@ -397,15 +397,21 @@ def strip_html(value: Any) -> str:
             return json.dumps(value, ensure_ascii=False)
         except Exception:
             return str(value)
-    text = html.unescape(str(value))
-    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
-    text = re.sub(r"(?i)</p\s*>", "\n\n", text)
-    text = re.sub(r"(?i)</div\s*>", "\n", text)
+    text = str(value)
+    # Check if input contains HTML entities
+    has_entities = '&' in text and ('lt;' in text or 'gt;' in text or 'amp;' in text)
+    if has_entities:
+        # Only unescape HTML entities, don't strip tags
+        return html.unescape(text).strip()
+    # Process actual HTML by converting tags to spaces then stripping
+    text = re.sub(r"(?i)<br\s*/?>", " ", text)
+    text = re.sub(r"(?i)</p\s*>", " ", text)
+    text = re.sub(r"(?i)</div\s*>", " ", text)
     text = re.sub(r"(?i)<li\s*>", "- ", text)
-    text = re.sub(r"(?i)</li\s*>", "\n", text)
+    text = re.sub(r"(?i)</li\s*>", " ", text)
     text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = text.replace("\r\n", " ").replace("\r", " ")
+    text = re.sub(r"\s{2,}", " ", text)
     return text.strip()
 
 
@@ -614,7 +620,7 @@ def delete_task(task_id: str) -> None:
         path.unlink()
 
 
-def create_task(title: str, description: str, priority: str, work_mode: str, assignee: str = "Jennie") -> Dict[str, Any]:
+def create_task(title: str, description: str, priority: str, work_mode: str = "iterative", assignee: str = "Jennie", **kwargs) -> Dict[str, Any]:
     """Create a new task.
     
     Args:
@@ -623,10 +629,15 @@ def create_task(title: str, description: str, priority: str, work_mode: str, ass
         priority: Priority level (urgent, high, medium, low)
         work_mode: Workflow mode (iterative, immediate)
         assignee: Task assignee (default: Jennie)
+        **kwargs: Additional arguments for backward compatibility
     
     Returns:
         Created task dictionary
     """
+    # Support old parameter name for backward compatibility
+    if 'workMode' in kwargs:
+        work_mode = kwargs['workMode']
+    
     now = datetime.now().isoformat()
     task = {
         "id": get_next_task_id(),

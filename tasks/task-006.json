@@ -1,0 +1,25 @@
+{
+  "id": "task-006",
+  "title": "New Task",
+  "description": "Test description",
+  "priority": "high",
+  "stage": "planning",
+  "workMode": "iterative",
+  "workflowStage": "initial",
+  "createdAt": "2026-03-12T21:30:58.513173",
+  "updatedAt": "2026-03-12T21:30:58.513232",
+  "assignee": "Jennie",
+  "completion_summary": "",
+  "notes": {
+    "goal": "",
+    "requirements": [],
+    "feedback": "",
+    "blocked": false,
+    "blockReason": null,
+    "unblockNeeded": null,
+    "timeEstimate": {
+      "planned": null,
+      "actual": null
+    }
+  }
+}
