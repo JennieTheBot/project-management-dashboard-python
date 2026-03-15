@@ -390,6 +390,14 @@ hr { border-color: rgba(111,168,255,0.12); }
 
 
 def strip_html(value: Any) -> str:
+    """Strip HTML tags from a string value.
+
+    Args:
+        value: Any value that may contain HTML
+
+    Returns:
+        Plain text with HTML tags removed and entities decoded
+    """
     if value is None:
         return ""
     if isinstance(value, (dict, list)):
@@ -397,25 +405,30 @@ def strip_html(value: Any) -> str:
             return json.dumps(value, ensure_ascii=False)
         except Exception:
             return str(value)
-    text = html.unescape(str(value))
-    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
-    text = re.sub(r"(?i)</p\s*>", "\n\n", text)
-    text = re.sub(r"(?i)</div\s*>", "\n", text)
-    text = re.sub(r"(?i)<li\s*>", "- ", text)
-    text = re.sub(r"(?i)</li\s*>", "\n", text)
+    text = str(value)
+    # First unescape HTML entities
+    text = html.unescape(text)
+    # Remove HTML tags while preserving content
+    # Use spaces instead of newlines for inline elements to avoid double spacing
+    text = re.sub(r"(?i)<br\s*/?>", " ", text)
+    text = re.sub(r"(?i)</p\s*>", " ", text)
+    text = re.sub(r"(?i)</div\s*>", " ", text)
+    text = re.sub(r"(?i)<li\s*>", " ", text)
+    text = re.sub(r"(?i)</li\s*>", " ", text)
     text = re.sub(r"<[^>]+>", "", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
 def safe_text(value: Any, default: str = "") -> str:
     """Convert a value to a cleaned text string.
-    
+
     Args:
         value: Any value to convert to text
         default: Default value if cleaned result is empty
-    
+
     Returns:
         Cleaned text string
     """
@@ -425,10 +438,10 @@ def safe_text(value: Any, default: str = "") -> str:
 
 def esc(value: Any) -> str:
     """Escape a value for safe HTML output.
-    
+
     Args:
         value: Any value to escape
-    
+
     Returns:
         HTML-escaped string
     """
@@ -437,10 +450,10 @@ def esc(value: Any) -> str:
 
 def read_json(path: Path) -> Optional[Dict[str, Any]]:
     """Read and parse a JSON file.
-    
+
     Args:
         path: Path to the JSON file
-    
+
     Returns:
         Parsed JSON data as dict, or None if file doesn't exist or is invalid
     """
@@ -454,7 +467,7 @@ def read_json(path: Path) -> Optional[Dict[str, Any]]:
 
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
     """Write a dictionary to a JSON file.
-    
+
     Args:
         path: Path to the output file
         payload: Dictionary to serialize to JSON
@@ -469,10 +482,10 @@ def write_json(path: Path, payload: Dict[str, Any]) -> None:
 
 def task_file(task_id: str) -> Path:
     """Get the path to a task JSON file.
-    
+
     Args:
         task_id: The task identifier
-    
+
     Returns:
         Path object for the task file
     """
@@ -481,7 +494,7 @@ def task_file(task_id: str) -> Path:
 
 def get_next_task_id() -> str:
     """Generate the next available task ID.
-    
+
     Returns:
         String ID in format "task-XXX" where XXX is the next sequential number
     """
@@ -496,10 +509,10 @@ def get_next_task_id() -> str:
 
 def normalize_notes(raw_notes: Any) -> Dict[str, Any]:
     """Normalize task notes dictionary to standard format.
-    
+
     Args:
         raw_notes: Raw notes data (dict, list, or string)
-    
+
     Returns:
         Normalized notes dictionary with standardized fields
     """
@@ -539,10 +552,10 @@ def normalize_notes(raw_notes: Any) -> Dict[str, Any]:
 
 def normalize_task(raw_task: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize a task dictionary to standard format.
-    
+
     Args:
         raw_task: Raw task data dictionary
-    
+
     Returns:
         Normalized task dictionary with all required fields
     """
@@ -573,10 +586,10 @@ def normalize_task(raw_task: Dict[str, Any]) -> Dict[str, Any]:
 
 def load_task(task_id: str) -> Optional[Dict[str, Any]]:
     """Load a task from its JSON file.
-    
+
     Args:
         task_id: The task identifier
-    
+
     Returns:
         Task dictionary, or None if not found
     """
@@ -594,7 +607,7 @@ def load_task(task_id: str) -> Optional[Dict[str, Any]]:
 
 def save_task(task: Dict[str, Any]) -> None:
     """Save a task to its JSON file.
-    
+
     Args:
         task: Task dictionary to save
     """
@@ -605,7 +618,7 @@ def save_task(task: Dict[str, Any]) -> None:
 
 def delete_task(task_id: str) -> None:
     """Delete a task file.
-    
+
     Args:
         task_id: The task identifier
     """
@@ -614,19 +627,29 @@ def delete_task(task_id: str) -> None:
         path.unlink()
 
 
-def create_task(title: str, description: str, priority: str, work_mode: str, assignee: str = "Jennie") -> Dict[str, Any]:
+def create_task(
+    title: str,
+    description: str,
+    priority: str,
+    work_mode: Optional[str] = None,
+    workMode: Optional[str] = None,
+    assignee: str = "Jennie"
+) -> Dict[str, Any]:
     """Create a new task.
-    
+
     Args:
         title: Task title
         description: Task description
         priority: Priority level (urgent, high, medium, low)
-        work_mode: Workflow mode (iterative, immediate)
+        work_mode: Workflow mode (iterative, immediate) [deprecated: use workMode]
+        workMode: Workflow mode (iterative, immediate)
         assignee: Task assignee (default: Jennie)
-    
+
     Returns:
         Created task dictionary
     """
+    # Support both snake_case and camelCase parameter names for backwards compatibility
+    mode = workMode if workMode else work_mode
     now = datetime.now().isoformat()
     task = {
         "id": get_next_task_id(),
@@ -634,7 +657,7 @@ def create_task(title: str, description: str, priority: str, work_mode: str, ass
         "description": safe_text(description, "No description provided."),
         "priority": priority if priority in PRIORITIES else "medium",
         "stage": "planning",
-        "workMode": work_mode if work_mode in WORKFLOW_MODES else "iterative",
+        "workMode": mode if mode in WORKFLOW_MODES else "iterative",
         "workflowStage": "initial",
         "createdAt": now,
         "updatedAt": now,
@@ -648,7 +671,7 @@ def create_task(title: str, description: str, priority: str, work_mode: str, ass
 
 def get_all_tasks() -> List[Dict[str, Any]]:
     """Get all tasks sorted by priority, stage, and creation date.
-    
+
     Returns:
         List of all task dictionaries, sorted
     """
@@ -669,10 +692,10 @@ def get_all_tasks() -> List[Dict[str, Any]]:
 
 def fmt_date(iso_str: str) -> str:
     """Format an ISO date string to human-readable format.
-    
+
     Args:
         iso_str: ISO format date string
-    
+
     Returns:
         Formatted date string (e.g., "Mar 12, 2026")
     """
@@ -682,13 +705,20 @@ def fmt_date(iso_str: str) -> str:
         return iso_str[:10]
 
 
-def apply_iterative_action(task: Dict[str, Any], action: str, feedback: str = "") -> None:
+def apply_iterative_action(
+    task: Dict[str, Any],
+    action: str,
+    feedback: str = ""
+) -> None:
     """Apply an action to an iterative workflow task.
-    
+
     Args:
         task: Task dictionary to update
         action: Action to apply (start, done, continue, refine, apply_refinement, complete)
-        feedback: Feedback text (used for 'refine' action)
+        feedback: Feedback text used for 'refine' action
+
+    Returns:
+        None
     """
     if action == "start":
         task["workflowStage"] = "executing"
@@ -710,12 +740,18 @@ def apply_iterative_action(task: Dict[str, Any], action: str, feedback: str = ""
     save_task(task)
 
 
-def apply_immediate_action(task: Dict[str, Any], action: str) -> None:
+def apply_immediate_action(
+    task: Dict[str, Any],
+    action: str
+) -> None:
     """Apply an action to an immediate workflow task.
-    
+
     Args:
         task: Task dictionary to update
         action: Action to apply (start, complete)
+
+    Returns:
+        None
     """
     if action == "start":
         task["workflowStage"] = "executing"
@@ -726,13 +762,20 @@ def apply_immediate_action(task: Dict[str, Any], action: str) -> None:
     save_task(task)
 
 
-def render_kpi(title: str, value: str, meta: str) -> None:
+def render_kpi(
+    title: str,
+    value: str,
+    meta: str
+) -> None:
     """Render a KPI card in the dashboard.
-    
+
     Args:
         title: KPI title/label
         value: KPI value
         meta: Additional metadata
+
+    Returns:
+        None
     """
     st.markdown(
         f"""
@@ -748,9 +791,12 @@ def render_kpi(title: str, value: str, meta: str) -> None:
 
 def render_task_card(task: Dict[str, Any]) -> None:
     """Render a task card in the dashboard.
-    
+
     Args:
         task: Task dictionary to render
+
+    Returns:
+        None
     """
     task = normalize_task(task)
     priority = PRIORITIES[task["priority"]]

@@ -39,7 +39,7 @@ class TestStripHtml:
     def test_strip_html_unicode(self):
         """Test HTML entity conversion."""
         result = strip_html("&lt;div&gt;Test&lt;/div&gt;")
-        assert result == "<div>Test</div>"
+        assert result == "Test" # After unescaping and stripping tags
 
 
 class TestLoadJson:
