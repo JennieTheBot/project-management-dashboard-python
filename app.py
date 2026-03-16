@@ -797,86 +797,60 @@ def render_task_card(task: Dict[str, Any]) -> None:
 
     Returns:
         None
-    """    if value is None:
-        return ""
-    if isinstance(value, (dict, list)):
-        try:
-            return json.dumps(value, ensure_ascii=False)
-        except Exception:
-            return str(value)
-    text = str(value)
-    # First unescape HTML entities
-    text = html.unescape(text)
-    # Remove HTML tags while preserving content
-    # Use spaces instead of newlines for inline elements to avoid double spacing
-    text = re.sub(r"(?i)<br\s*/?>", " ", text)
-    text = re.sub(r"(?i)</p\s*>", " ", text)
-    text = re.sub(r"(?i)</div\s*>", " ", text)
-    text = re.sub(r"(?i)<li\s*>", " ", text)
-    text = re.sub(r"(?i)</li\s*>", " ", text)
-    text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    # Normalize whitespace
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def safe_text(value: Any, default: str = "") -> str:
-    """Convert a value to a cleaned text string.
-
-    Args:
-        value: Any value to convert to text
-        default: Default value if cleaned result is empty
-
-    Returns:
-        Cleaned text string
     """
-    cleaned = strip_html(value)
-    return cleaned if cleaned else default
+    task = normalize_task(task)
+    priority = PRIORITIES[task["priority"]]
+    stage = STAGES[task["stage"]]
+    mode = WORKFLOW_MODES[task["workMode"]]
+    blocked = bool(task["notes"].get("blocked", False))
 
+    display_title = safe_text(task.get("title"), "Untitled task")
+    display_description = safe_text(task.get("description"), "No description provided.")
+    display_assignee = safe_text(task.get("assignee"), "Jennie")
+    display_summary = safe_text(task.get("completion_summary"))
+    display_block_reason = safe_text(task["notes"].get("blockReason"), "Not specified")
+    display_unblock_needed = safe_text(task["notes"].get("unblockNeeded"), "Not specified")
 
-def esc(value: Any) -> str:
-    """Escape a value for safe HTML output.
+    blocked_html = ""
+    if blocked:
+        blocked_html = f"""
+            <div class="blocked-box">
+                <div style="font-weight:800; color:#fecaca; margin-bottom:0.35rem;">Blocked</div>
+                <div style="color:#fee2e2;">Reason: {esc(display_block_reason)}</div>
+                <div style="color:#fee2e2; margin-top:0.24rem;">Needs: {esc(display_unblock_needed)}</div>
+            </div>
+        """
 
-    Args:
-        value: Any value to escape
+    summary_html = ""
+    if task["stage"] == "completion" and display_summary:
+        summary_html = f"""
+            <div style="background:#0d3820;border:1px solid #10b981;border-radius:6px;padding:0.6rem;margin-top:0.5rem;">
+                <div style="font-size:0.85rem;font-weight:600;color:#34d399;margin-bottom:0.25rem;">COMPLETED</div>
+                <div style="color:#e5e7eb;line-height:1.5;font-size:0.9rem;">{esc(display_summary)}</div>
+            </div>
+        """
 
-    Returns:
-        HTML-escaped string
-    """
-    return html.escape(str(value or ""))
+    badges = [
+        f'<span class="badge" style="background:{stage["color"]}22; color:{stage["color"]};">{stage["icon"]} · {stage["label"]}</span>',
+        f'<span class="badge" style="background:{mode["color"]}22; color:{mode["color"]};">{mode["icon"]} · {mode["label"]}</span>',
+        f'<span class="badge" style="background:{priority["color"]}22; color:{priority["color"]};">{priority["label"]}</span>',
+    ]
+    if blocked:
+        badges.append("<span class='badge' style='background:#ef444422;color:#fecaca;'>Blocked</span>")
 
-
-def read_json(path: Path) -> Optional[Dict[str, Any]]:
-    """Read and parse a JSON file.
-
-    Args:
-        path: Path to the JSON file
-
-    Returns:
-        Parsed JSON data as dict, or None if file doesn't exist or is invalid
-    """
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        return payload if isinstance(payload, dict) else None
-    except Exception as e:
-        logger.error(f"Error reading JSON file {path}: {e}")
-        return None
-
-
-def write_json(path: Path, payload: Dict[str, Any]) -> None:
-    """Write a dictionary to a JSON file.
-
-    Args:
-        path: Path to the output file
-        payload: Dictionary to serialize to JSON
-    """
-    try:
-        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        logger.debug(f"Successfully wrote JSON to {path}")
-    except Exception as e:
-        logger.error(f"Error writing JSON file {path}: {e}")
-        raise
+    st.markdown(
+        f"""
+        <div class="task-shell" style="--accent-color:{priority['color']}; margin-bottom:0.4rem;">
+            <div class="task-topline">{' '.join(badges)}</div>
+            <div class="task-readable-title">{esc(display_title)}</div>
+            <div class="task-readable-desc">{esc(display_description).replace(chr(10), '<br>')}</div>
+            <div class="task-readable-meta">Assigned to {esc(display_assignee)} · Created {fmt_date(task['createdAt'])} · Updated {fmt_date(task['updatedAt'])}</div>
+            {blocked_html}
+            {summary_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def task_file(task_id: str) -> Path:
