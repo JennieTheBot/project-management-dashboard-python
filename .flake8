@@ -1,0 +1,12 @@
+[flake8]
+max-line-length = 127
+max-complexity = 10
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    build,
+    dist
+ignore =
+    E203,  # whitespace before ':' (PEP8 conflicts with Black)
+    W503,  # line break before binary operator

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: project-management-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./tasks:/app/tasks
+      - ./logs:/app/logs
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import streamlit; print('Healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Development service with hot reload (optional)
+  dashboard-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: project-management-dashboard-dev
+    ports:
+      - "8502:8501"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - WATCHFILES_FORCE_POLLING=true
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.watchNote=true
+    restart: "no"
