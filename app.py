@@ -797,6 +797,405 @@ def render_task_card(task: Dict[str, Any]) -> None:
 
     Returns:
         None
+    """    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        try:
+            return json.dumps(value, ensure_ascii=False)
+        except Exception:
+            return str(value)
+    text = str(value)
+    # First unescape HTML entities
+    text = html.unescape(text)
+    # Remove HTML tags while preserving content
+    # Use spaces instead of newlines for inline elements to avoid double spacing
+    text = re.sub(r"(?i)<br\s*/?>", " ", text)
+    text = re.sub(r"(?i)</p\s*>", " ", text)
+    text = re.sub(r"(?i)</div\s*>", " ", text)
+    text = re.sub(r"(?i)<li\s*>", " ", text)
+    text = re.sub(r"(?i)</li\s*>", " ", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def safe_text(value: Any, default: str = "") -> str:
+    """Convert a value to a cleaned text string.
+
+    Args:
+        value: Any value to convert to text
+        default: Default value if cleaned result is empty
+
+    Returns:
+        Cleaned text string
+    """
+    cleaned = strip_html(value)
+    return cleaned if cleaned else default
+
+
+def esc(value: Any) -> str:
+    """Escape a value for safe HTML output.
+
+    Args:
+        value: Any value to escape
+
+    Returns:
+        HTML-escaped string
+    """
+    return html.escape(str(value or ""))
+
+
+def read_json(path: Path) -> Optional[Dict[str, Any]]:
+    """Read and parse a JSON file.
+
+    Args:
+        path: Path to the JSON file
+
+    Returns:
+        Parsed JSON data as dict, or None if file doesn't exist or is invalid
+    """
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else None
+    except Exception as e:
+        logger.error(f"Error reading JSON file {path}: {e}")
+        return None
+
+
+def write_json(path: Path, payload: Dict[str, Any]) -> None:
+    """Write a dictionary to a JSON file.
+
+    Args:
+        path: Path to the output file
+        payload: Dictionary to serialize to JSON
+    """
+    try:
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        logger.debug(f"Successfully wrote JSON to {path}")
+    except Exception as e:
+        logger.error(f"Error writing JSON file {path}: {e}")
+        raise
+
+
+def task_file(task_id: str) -> Path:
+    """Get the path to a task JSON file.
+
+    Args:
+        task_id: The task identifier
+
+    Returns:
+        Path object for the task file
+    """
+    return TASKS_FOLDER / f"{task_id}.json"
+
+
+def get_next_task_id() -> str:
+    """Generate the next available task ID.
+
+    Returns:
+        String ID in format "task-XXX" where XXX is the next sequential number
+    """
+    max_num = 0
+    for path in TASKS_FOLDER.glob("task-*.json"):
+        try:
+            max_num = max(max_num, int(path.stem.replace("task-", "")))
+        except ValueError:
+            continue
+    return f"task-{max_num + 1:03d}"
+
+
+def normalize_notes(raw_notes: Any) -> Dict[str, Any]:
+    """Normalize task notes dictionary to standard format.
+
+    Args:
+        raw_notes: Raw notes data (dict, list, or string)
+
+    Returns:
+        Normalized notes dictionary with standardized fields
+    """
+    notes = raw_notes if isinstance(raw_notes, dict) else {}
+    requirements = notes.get("requirements", [])
+    if isinstance(requirements, str):
+        requirements = [safe_text(requirements)] if safe_text(requirements) else []
+    elif not isinstance(requirements, list):
+        requirements = []
+
+    time_est = notes.get("timeEstimate")
+    if not isinstance(time_est, dict):
+        time_est = {}
+
+    actual = time_est.get("actual")
+    if isinstance(actual, str):
+        stripped = actual.strip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            try:
+                actual = json.loads(stripped)
+            except Exception:
+                pass
+
+    return {
+        "goal": safe_text(notes.get("goal")),
+        "requirements": [safe_text(x) for x in requirements if safe_text(x)],
+        "feedback": safe_text(notes.get("feedback")),
+        "blocked": bool(notes.get("blocked", False)),
+        "blockReason": safe_text(notes.get("blockReason")) or None,
+        "unblockNeeded": safe_text(notes.get("unblockNeeded")) or None,
+        "timeEstimate": {
+            "planned": safe_text(time_est.get("planned")) or None,
+            "actual": safe_text(actual) or None,
+        },
+    }
+
+
+def normalize_task(raw_task: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize a task dictionary to standard format.
+
+    Args:
+        raw_task: Raw task data dictionary
+
+    Returns:
+        Normalized task dictionary with all required fields
+    """
+    task = dict(raw_task or {})
+    task_id = safe_text(task.get("id")) or get_next_task_id()
+    stage = task.get("stage") if task.get("stage") in STAGES else "planning"
+    priority = task.get("priority") if task.get("priority") in PRIORITIES else "medium"
+    work_mode = task.get("workMode") if task.get("workMode") in WORKFLOW_MODES else "iterative"
+    workflow_stage = safe_text(task.get("workflowStage"), "initial")
+    if workflow_stage not in VALID_WORKFLOW_STAGES:
+        workflow_stage = "completed" if stage == "completion" else "initial"
+
+    return {
+        "id": task_id,
+        "title": safe_text(task.get("title"), "Untitled task"),
+        "description": safe_text(task.get("description"), "No description provided."),
+        "priority": priority,
+        "stage": stage,
+        "workMode": work_mode,
+        "workflowStage": workflow_stage,
+        "createdAt": safe_text(task.get("createdAt"), datetime.now().isoformat()),
+        "updatedAt": safe_text(task.get("updatedAt"), datetime.now().isoformat()),
+        "assignee": safe_text(task.get("assignee"), "Jennie"),
+        "completion_summary": safe_text(task.get("completion_summary")),
+        "notes": normalize_notes(task.get("notes")),
+    }
+
+
+def load_task(task_id: str) -> Optional[Dict[str, Any]]:
+    """Load a task from its JSON file.
+
+    Args:
+        task_id: The task identifier
+
+    Returns:
+        Task dictionary, or None if not found
+    """
+    path = task_file(task_id)
+    if not path.exists():
+        return None
+    payload = read_json(path)
+    if not payload:
+        return None
+    task = normalize_task(payload)
+    if task != payload:
+        write_json(path, task)
+    return task
+
+
+def save_task(task: Dict[str, Any]) -> None:
+    """Save a task to its JSON file.
+
+    Args:
+        task: Task dictionary to save
+    """
+    normalized = normalize_task(task)
+    normalized["updatedAt"] = datetime.now().isoformat()
+    write_json(task_file(normalized["id"]), normalized)
+
+
+def delete_task(task_id: str) -> None:
+    """Delete a task file.
+
+    Args:
+        task_id: The task identifier
+    """
+    path = task_file(task_id)
+    if path.exists():
+        path.unlink()
+
+
+def create_task(
+    title: str,
+    description: str,
+    priority: str,
+    work_mode: Optional[str] = None,
+    workMode: Optional[str] = None,
+    assignee: str = "Jennie"
+) -> Dict[str, Any]:
+    """Create a new task.
+
+    Args:
+        title: Task title
+        description: Task description
+        priority: Priority level (urgent, high, medium, low)
+        work_mode: Workflow mode (iterative, immediate) [deprecated: use workMode]
+        workMode: Workflow mode (iterative, immediate)
+        assignee: Task assignee (default: Jennie)
+
+    Returns:
+        Created task dictionary
+    """
+    # Support both snake_case and camelCase parameter names for backwards compatibility
+    mode = workMode if workMode else work_mode
+    now = datetime.now().isoformat()
+    task = {
+        "id": get_next_task_id(),
+        "title": safe_text(title, "Untitled task"),
+        "description": safe_text(description, "No description provided."),
+        "priority": priority if priority in PRIORITIES else "medium",
+        "stage": "planning",
+        "workMode": mode if mode in WORKFLOW_MODES else "iterative",
+        "workflowStage": "initial",
+        "createdAt": now,
+        "updatedAt": now,
+        "assignee": safe_text(assignee, "Jennie"),
+        "completion_summary": "",
+        "notes": normalize_notes({}),
+    }
+    save_task(task)
+    return task
+
+
+def get_all_tasks() -> List[Dict[str, Any]]:
+    """Get all tasks sorted by priority, stage, and creation date.
+
+    Returns:
+        List of all task dictionaries, sorted
+    """
+    tasks: List[Dict[str, Any]] = []
+    for path in TASKS_FOLDER.glob("task-*.json"):
+        task = load_task(path.stem)
+        if task:
+            tasks.append(task)
+    tasks.sort(
+        key=lambda t: (
+            PRIORITY_ORDER.get(t.get("priority", "medium"), 99),
+            STAGE_ORDER.get(t.get("stage", "planning"), 99),
+            t.get("createdAt", ""),
+        )
+    )
+    return tasks
+
+
+def fmt_date(iso_str: str) -> str:
+    """Format an ISO date string to human-readable format.
+
+    Args:
+        iso_str: ISO format date string
+
+    Returns:
+        Formatted date string (e.g., "Mar 12, 2026")
+    """
+    try:
+        return datetime.fromisoformat(iso_str.replace("Z", "+00:00")).strftime("%b %d, %Y")
+    except ValueError:
+        return iso_str[:10]
+
+
+def apply_iterative_action(
+    task: Dict[str, Any],
+    action: str,
+    feedback: str = ""
+) -> None:
+    """Apply an action to an iterative workflow task.
+
+    Args:
+        task: Task dictionary to update
+        action: Action to apply (start, done, continue, refine, apply_refinement, complete)
+        feedback: Feedback text used for 'refine' action
+
+    Returns:
+        None
+    """
+    if action == "start":
+        task["workflowStage"] = "executing"
+        task["stage"] = "structuring"
+    elif action == "done":
+        task["workflowStage"] = "waiting_feedback"
+    elif action == "continue":
+        task["workflowStage"] = "executing"
+        task["stage"] = "unit-testing"
+    elif action == "refine":
+        task["notes"]["feedback"] = safe_text(feedback)
+        task["workflowStage"] = "refining"
+    elif action == "apply_refinement":
+        task["workflowStage"] = "executing"
+        task["stage"] = "structuring"
+    elif action == "complete":
+        task["workflowStage"] = "completed"
+        task["stage"] = "completion"
+    save_task(task)
+
+
+def apply_immediate_action(
+    task: Dict[str, Any],
+    action: str
+) -> None:
+    """Apply an action to an immediate workflow task.
+
+    Args:
+        task: Task dictionary to update
+        action: Action to apply (start, complete)
+
+    Returns:
+        None
+    """
+    if action == "start":
+        task["workflowStage"] = "executing"
+        task["stage"] = "structuring"
+    elif action == "complete":
+        task["workflowStage"] = "completed"
+        task["stage"] = "completion"
+    save_task(task)
+
+
+def render_kpi(
+    title: str,
+    value: str,
+    meta: str
+) -> None:
+    """Render a KPI card in the dashboard.
+
+    Args:
+        title: KPI title/label
+        value: KPI value
+        meta: Additional metadata
+
+    Returns:
+        None
+    """
+    st.markdown(
+        f"""
+        <div class="kpi">
+            <div class="kpi-label">{esc(title)}</div>
+            <div class="kpi-value">{esc(value)}</div>
+            <div class="kpi-meta">{esc(meta)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_task_card(task: Dict[str, Any]) -> None:
+    """Render a task card in the dashboard.
+
+    Args:
+        task: Task dictionary to render
+
+    Returns:
+        None
     """
     task = normalize_task(task)
     priority = PRIORITIES[task["priority"]]
