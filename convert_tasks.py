@@ -12,10 +12,10 @@ TASKS_DIR.mkdir(exist_ok=True)
 
 def strip_html(value: Any) -> str:
     """Remove HTML tags from a string value.
-    
+
     Args:
         value: Any value that may contain HTML (str, dict, list, None)
-    
+
     Returns:
         Plain text with HTML tags removed and entities decoded
     """
@@ -26,24 +26,29 @@ def strip_html(value: Any) -> str:
             return json.dumps(value, ensure_ascii=False)
         except Exception:
             return str(value)
-    text = html.unescape(str(value))
-    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
-    text = re.sub(r"(?i)</p\s*>", "\n\n", text)
-    text = re.sub(r"(?i)</div\s*>", "\n", text)
-    text = re.sub(r"(?i)<li\s*>", "- ", text)
-    text = re.sub(r"(?i)</li\s*>", "\n", text)
+    text = str(value)
+    # First unescape HTML entities
+    text = html.unescape(text)
+    # Remove HTML tags while preserving content
+    # Use spaces instead of newlines for inline elements to avoid double spacing
+    text = re.sub(r"(?i)<br\s*/?>", " ", text)
+    text = re.sub(r"(?i)</p\s*>", " ", text)
+    text = re.sub(r"(?i)</div\s*>", " ", text)
+    text = re.sub(r"(?i)<li\s*>", " ", text)
+    text = re.sub(r"(?i)</li\s*>", " ", text)
     text = re.sub(r"<[^>]+>", "", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
 def load_json(path: Path) -> Dict[str, Any] | None:
     """Load JSON from a file.
-    
+
     Args:
         path: Path to JSON file
-    
+
     Returns:
         Parsed JSON data or None if invalid
     """
@@ -55,20 +60,23 @@ def load_json(path: Path) -> Dict[str, Any] | None:
 
 def save_json(path: Path, payload: Dict[str, Any]) -> None:
     """Save data to a JSON file.
-    
+
     Args:
         path: Path to output file
         payload: Data to serialize
+
+    Returns:
+        None
     """
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def sanitize_task(task: Dict[str, Any]) -> Dict[str, Any]:
     """Sanitize and normalize a task dictionary.
-    
+
     Args:
         task: Raw task data dictionary
-    
+
     Returns:
         Sanitized task dictionary with validated fields
     """
@@ -116,9 +124,12 @@ def sanitize_task(task: Dict[str, Any]) -> Dict[str, Any]:
 
 def process_file(path: Path) -> None:
     """Process and sanitize a single task file.
-    
+
     Args:
         path: Path to the task JSON file
+
+    Returns:
+        None
     """
     data = load_json(path)
     if not data:
@@ -132,7 +143,11 @@ def process_file(path: Path) -> None:
 
 
 def main() -> None:
-    """Main entry point for the task sanitization utility."""
+    """Main entry point for the task sanitization utility.
+
+    Returns:
+        None
+    """
     candidates = sorted(TASKS_DIR.glob("task-*.json")) + sorted(BASE_DIR.glob("task-*.json"))
     if not candidates:
         print("No task files found.")
